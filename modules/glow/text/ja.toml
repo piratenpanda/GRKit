@@ -18,6 +18,10 @@ values = ["オフ", "弱", "中", "強"]
 label = "色"
 values = ["レッド", "オレンジ", "ゴールド", "ホワイト"]
 
+[settings.HALATION_FILM]
+label = "フィルム連動"
+values = ["オフ", "オン"]
+
 [settings.BLOOM_ICON]
 label = "アイコン表示"
 values = ["オン", "オフ"]

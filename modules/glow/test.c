@@ -312,6 +312,44 @@ static void test_halation_colors(PictureSet *set)
     set_strength(1);
 }
 
+/* With HALATION_FILM On, a film with a strong anti-halation layer gives the
+   Orange rim in every color, and an effect without a film the rim of its
+   color. A film with a weak layer gives a redder rim, and at Weak the light
+   of Medium. Off ignores the film. */
+static void test_halation_film(PictureSet *set)
+{
+    const u32 strong = GRKIT_FILM_KNOWN | 400U << 16, weak = strong | GRKIT_FILM_WEAK_ANTIHALATION;
+    set_strength(1);
+    Rim orange = halation_rim(set, 1, 255, 128, 128), gold = halation_rim(set, 2, 255, 128, 128);
+    setting_set(SETTING_HALATION_FILM, 1);
+    grkit_test_film = strong;
+    Rim film = halation_rim(set, 2, 255, 128, 128);
+    assert(film.red == orange.red && film.green == orange.green && film.energy == orange.energy);
+    grkit_test_film = weak;
+    set_strength(0);
+    setting_set(SETTING_HALATION_FILM, 0);
+    Rim weak_orange = halation_rim(set, 1, 255, 128, 128);
+    setting_set(SETTING_HALATION_FILM, 1);
+    film = halation_rim(set, 2, 255, 128, 128);
+    assert(film.energy > weak_orange.energy);
+    /* At Strong both rims have the same strength. */
+    set_strength(2);
+    setting_set(SETTING_HALATION_FILM, 0);
+    Rim strong_orange = halation_rim(set, 1, 255, 128, 128);
+    setting_set(SETTING_HALATION_FILM, 1);
+    film = halation_rim(set, 2, 255, 128, 128);
+    assert((unsigned long long)film.red * strong_orange.green > (unsigned long long)film.green * strong_orange.red);
+    set_strength(1);
+    grkit_test_film = 0;
+    film = halation_rim(set, 2, 255, 128, 128);
+    assert(film.red == gold.red && film.green == gold.green);
+    setting_set(SETTING_HALATION_FILM, 0);
+    grkit_test_film = weak;
+    film = halation_rim(set, 2, 255, 128, 128);
+    assert(film.red == gold.red && film.green == gold.green);
+    grkit_test_film = 0;
+}
+
 /* A fixed light map isolates output compositing from source detection. */
 static PictureSet composite_fixture(u8 y, u8 cb, u8 cr, u32 half)
 {
@@ -1259,13 +1297,15 @@ static void test_filter_gate(PictureSet *set)
    one effect off leaves the look of the other unchanged. */
 static void test_settings(PictureSet *set)
 {
-    assert(grkit_module.setting_count == 5);
+    assert(grkit_module.setting_count == 6);
     assert_setting_default("BLOOM", 4, 0);
     assert_setting_default("HALATION", 4, 0);
     assert_setting_default("HALATION_COLOR", 4, 1);
     /* The viewfinder icons show by default. */
     assert_setting_default("BLOOM_ICON", 2, 0);
     assert_setting_default("HALATION_ICON", 2, 0);
+    /* Halation keeps its color unless asked to follow the film. */
+    assert_setting_default("HALATION_FILM", 2, 0);
     set_pair(0, 0);
     fill(40, 128, 128); square();
     u32 off = plane_sum(&set->planes[0]);
@@ -1305,6 +1345,7 @@ int main(void)
     test_halation_preserves_background(&set);
     test_halation_red_rim(&set);
     test_halation_colors(&set);
+    test_halation_film(&set);
     test_halation_source_response(&set);
     test_halation_film_white();
     test_halation_half_core();

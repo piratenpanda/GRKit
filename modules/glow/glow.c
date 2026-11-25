@@ -359,7 +359,15 @@ typedef struct {
    - Gold: green at about half of red, as a very bright source gives when
      the reflected light also exposes the green layer.
    - White: no color (neutral), as black-and-white film gives.
-   A monochrome picture has only luma, so it takes Orange in every color. */
+   A monochrome picture has only luma, so it takes Orange in every color.
+
+   With HALATION_FILM On, an effect that names its film (picture_film) sets
+   the rim in place of the color: a film with a strong anti-halation layer
+   gives Orange; one with a weak layer, which lets about five times the
+   light back into the red layer (spektrafilm's halation presets), gives a
+   redder rim between Orange and Red, one strength step higher, at most
+   Strong. The base of the film (still or motion picture) changes the width
+   of the rim by a fraction of a fine pixel, which the glow does not show. */
 #define HALATION_LOOK(r, g, b, red_mix, no_color) { \
     .fine = {r, g, b}, .strength = {128, 256, 576}, .cell = 13, \
     .boost = 4, .floor = 210, .clip = 224, .knee = 24, .red = red_mix, .neutral = no_color, \
@@ -372,6 +380,7 @@ static const Look halation_looks[] = {
     HALATION_LOOK(140, 140, 140, 0, 1),
 };
 #define HALATION_COLORS (sizeof halation_looks / sizeof halation_looks[0])
+static const Look halation_weak_backing = HALATION_LOOK(610, 35, 0, 26, 0);
 /* Bloom spreads all channels equally in a compact halo, as a highlight
    diffusion filter does, with a high floor. Lit surfaces and mid-tones
    keep their level, and the surround and area cut reduce broad bright
@@ -2049,12 +2058,19 @@ static u32 stream_cells(Fine *f, const PictureSet *set, u8 *at, u32 room)
    and a value outside the setting. */
 static u32 strength_of(u32 value) { return value <= 3 ? value : 0; }
 
-/* The Halation look of the color setting. A monochrome picture, and a value
-   outside the setting, take Orange. */
-static const Look *halation_of(const PictureSet *set)
+/* The Halation look of the color setting, or of the film of the effect with
+   HALATION_FILM On, which can raise `strength` by one step. A monochrome
+   picture, and a value outside the setting, take Orange. */
+static const Look *halation_of(const PictureSet *set, u32 *strength)
 {
-    u32 color = setting_get(SETTING_HALATION_COLOR);
-    return &halation_looks[set->mono || color >= HALATION_COLORS ? HALATION_ORANGE : color];
+    u32 color = setting_get(SETTING_HALATION_COLOR), film;
+    if (set->mono) return &halation_looks[HALATION_ORANGE];
+    if (setting_get(SETTING_HALATION_FILM) == 1U && ((film = picture_film(set)) & GRKIT_FILM_KNOWN)) {
+        if (!(film & GRKIT_FILM_WEAK_ANTIHALATION)) return &halation_looks[HALATION_ORANGE];
+        if (*strength && *strength < 3U) ++*strength;
+        return &halation_weak_backing;
+    }
+    return &halation_looks[color >= HALATION_COLORS ? HALATION_ORANGE : color];
 }
 
 void glow_apply(PictureSet *set, u32 value)
@@ -2069,7 +2085,7 @@ void glow_apply(PictureSet *set, u32 value)
     at += (sizeof(Rows) + 3) & ~3U;
     Fine *f = (Fine *)(void *)at, *other = 0;
     at += (sizeof(Fine) + 3) & ~3U;
-    const Look *halation = halation_of(set);
+    const Look *halation = halation_of(set, &h);
     stream_setup(f, set, src, b ? &bloom : halation, b ? b : h);
     if (b && h) {
         other = (Fine *)(void *)at;

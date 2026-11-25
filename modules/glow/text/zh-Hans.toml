@@ -18,6 +18,10 @@ values = ["关闭", "弱", "中", "强"]
 label = "颜色"
 values = ["红色", "橙色", "金色", "白色"]
 
+[settings.HALATION_FILM]
+label = "跟随胶片"
+values = ["关闭", "开启"]
+
 [settings.BLOOM_ICON]
 label = "图标显示"
 values = ["开启", "关闭"]

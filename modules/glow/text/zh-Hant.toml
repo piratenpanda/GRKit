@@ -18,6 +18,10 @@ values = ["關閉", "弱", "中", "強"]
 label = "顏色"
 values = ["紅色", "橙色", "金色", "白色"]
 
+[settings.HALATION_FILM]
+label = "跟隨底片"
+values = ["關閉", "開啟"]
+
 [settings.BLOOM_ICON]
 label = "圖示顯示"
 values = ["開啟", "關閉"]

@@ -18,6 +18,10 @@ values = ["Off", "Weak", "Medium", "Strong"]
 label = "Color"
 values = ["Red", "Orange", "Gold", "White"]
 
+[settings.HALATION_FILM]
+label = "Follow Film"
+values = ["Off", "On"]
+
 [settings.BLOOM_ICON]
 label = "Show Icon"
 values = ["On", "Off"]
