@@ -76,7 +76,7 @@ static Stats stats(const Plane *p, u32 channel)
 static PictureSet set_of(u8 y, u32 planes, u32 mono) { return set_of_color(y, 128, 128, planes, mono); }
 
 /* The model of the tone of grain.c (see the comment there). */
-u32 grain_tone_of(u32 v);
+u32 grain_tone_of(u32 v, u32 kind);
 extern const u16 grain_kernel_table[19][4];
 extern const u8 grain_blend_weight[8];
 extern const u16 grain_blend_norm[8];
@@ -91,6 +91,15 @@ static double tone_formula(double v)
     p = p < 1e-6 ? 1e-6 : p > 1 - 1e-6 ? 1 - 1e-6 : p;
     return v * slope * sqrt(p * (1 - p));
 }
+/* A slide film scanned directly: a display gamma of 2.2 over a film of
+   density 3.5, with half of its particles developed at density 1.75. */
+static double slide_formula(double v)
+{
+    if (v < 0.5) v = 0.5;
+    double d = -2.2 * log10(v / 255), p = d / 3.5;
+    p = p < 0 ? 0 : p > 1 ? 1 : p;
+    return v * sqrt(p * (1 - p));
+}
 
 int main(void)
 {
@@ -101,8 +110,14 @@ int main(void)
     for (u32 v = 0; v < 256U; ++v)
         if (tone_formula(v) > peak) peak = tone_formula(v);
     /* The tone of grain.c is within 11 of 255 of the model. */
-    for (u32 v = 0; v < 256U; ++v) assert(fabs(grain_tone_of(v) - 255 * tone_formula(v) / peak) <= 11.0);
-    assert(grain_tone_of(0) == 0 && grain_tone_of(255) == 0 && grain_tone_of(128) > 240);
+    for (u32 v = 0; v < 256U; ++v) assert(fabs(grain_tone_of(v, 0) - 255 * tone_formula(v) / peak) <= 11.0);
+    assert(grain_tone_of(0, 0) == 0 && grain_tone_of(255, 0) == 0 && grain_tone_of(128, 0) > 240);
+    /* The tone of a slide film is within 7 of 255 of its model up to 247. */
+    peak = 0;
+    for (u32 v = 0; v < 256U; ++v)
+        if (slide_formula(v) > peak) peak = slide_formula(v);
+    for (u32 v = 0; v < 248U; ++v) assert(fabs(grain_tone_of(v, 1) - 255 * slide_formula(v) / peak) <= 7.0);
+    assert(grain_tone_of(0, 1) == 0 && grain_tone_of(180, 1) == 255 && grain_tone_of(40, 1) > grain_tone_of(40, 0));
     for (u32 i = 0; i < 19U; ++i) {
         const u16 *k = grain_kernel_table[i];
         double sigma = 0.40 + 0.05 * i, w[4], total = 0;

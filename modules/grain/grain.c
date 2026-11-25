@@ -39,6 +39,11 @@
      logistic of gamma 2.6, and a negative of density 2.2 with half of its
      particles developed at the middle of the paper curve. The grain is
      strongest in the middle tones and none at paper white or in black.
+   - A slide film (an effect whose film is positive, picture_film) is
+     scanned, not printed: the scan shows the density of the film itself,
+     a display gamma of 2.2 over a film of density 3.5, so the grain is
+     strongest in the light middle tones, stays in the shadows, and falls
+     off only toward the clear film at white.
    - The grain is density: it darkens, so a value moves by its grain times
      the tone of Y, in each of R, G, and B. The filter writes the change of Y,
      Cb, and Cr, so a picture without grain stays exact.
@@ -73,7 +78,8 @@
 
    CORE.GRAIN gives the strength and calls the filter (module.toml), and
    CORE.GRAIN_SIZE the size; Auto follows the ISO as the native grain does:
-   small to ISO 400, medium to ISO 800, large above. */
+   small to ISO 400, medium to ISO 800, large above. The ISO is that of the
+   film of the effect when it names one, else that of the shot. */
 #include "grkit_module.h"
 
 #define LAYERS 3U
@@ -113,22 +119,38 @@ static int qdmulh(int a, int b) { return (int)(((s32)a * b) >> 15); }
 static int qrdmulh(int a, int b) { return (int)(((s32)a * b + (1 << 14)) >> 15); }
 static int clamp(int v) { return v < 0 ? 0 : v > 255 ? 255 : v; }
 
-/* The visible grain of a print for each output value v, 0 to 255: two
-   halves of a parabola, 255 at TONE_PEAK and 0 at 24 and at 251, that fit
-   the model of the comment at the top within 11 of 255 (test.c checks it),
-   so that NEON computes it for each sample in 16 bits:
-   255 - qdmulh(d^2, K) for d = v - TONE_PEAK, with K = 255 x 32768 / 107^2
-   below the peak and 255 x 32768 / 120^2 above, and 0 at least. */
-#define TONE_PEAK 131
-#define TONE_LEFT 730
-#define TONE_RIGHT 580
+/* The visible grain for each output value v, 0 to 255: two halves of a
+   parabola that fit the model of the comment at the top (test.c checks
+   them), so that NEON computes it for each sample in 16 bits:
+   255 - qdmulh(d^2, K) for d = v - peak, with K = 255 x 32768 / w^2 for the
+   half width w below and above the peak, and 0 at least. tones[TONE_PRINT],
+   a negative printed on paper: peak 131, 0 at 24 and at 251 (w 107 and 120),
+   within 11 of 255. tones[TONE_SLIDE], a scanned slide film: peak 180, w 176
+   and 90, within 7 of 255 up to 247; the model falls to 0 at 255, where this
+   keeps about 78. */
+#define TONE_PRINT 0U
+#define TONE_SLIDE 1U
+#define TONE_PEAK 0
+#define TONE_LEFT 1
+#define TONE_RIGHT 2
+static const short tones[2][3] = {{131, 730, 580}, {180, 270, 1032}};
+/* The tone of the picture that grain_draw draws. */
+static u32 tone_kind;
 static int grain_tone(int v)
 {
-    int d = v - TONE_PEAK, t = 255 - qdmulh(d * d, d < 0 ? TONE_LEFT : TONE_RIGHT);
-    return t < 0 ? 0 : t;
+    const short *t = tones[tone_kind];
+    int d = v - t[TONE_PEAK], g = 255 - qdmulh(d * d, d < 0 ? t[TONE_LEFT] : t[TONE_RIGHT]);
+    return g < 0 ? 0 : g;
 }
 /* For test.c. */
-u32 grain_tone_of(u32 v) { return (u32)grain_tone((int)v); }
+u32 grain_tone_of(u32 v, u32 kind)
+{
+    u32 kept = tone_kind, g;
+    tone_kind = kind;
+    g = (u32)grain_tone((int)v);
+    tone_kind = kept;
+    return g;
+}
 
 /* Gaussian kernels of radius 3 for sigma 0.40 to 1.30 pixels in steps of
    0.05, in 1/4096: the center, then each side. test.c checks them. */
@@ -187,7 +209,7 @@ typedef struct {
     u32 cell_row;
     /* The scalars of the NEON code (grain_constants), and the weights of
        the left and the right edge of a cell (grain_hblend). */
-    short constants[16];
+    short constants[24];
     short edge_weights[48];
 } Scratch;
 _Static_assert(sizeof(Scratch) <= GRKIT_PLANE_SCRATCH, "The grain fits the scratch");
@@ -503,8 +525,9 @@ static void mono_pixel(u8 *y, int z, int scale)
 
 #if GRAIN_NEON
 /* Registers of grain_luma_blocks: d0 the chroma loss constants, d1 the scale
-   and the weights of R, G, and B in Y (s16 scalars), d5 `keep`, q4 TONE_LEFT,
-   q5 TONE_RIGHT, q6 255 (s16), d14 128 and d15 TONE_PEAK (u8), d16 Y, d17
+   and the weights of R, G, and B in Y (s16 scalars), d5 `keep`, q4 and q5 the
+   K of the tone below and above its peak, q6 255 (s16), d14 128 and d15 the
+   peak of the tone (u8), from constants 16 to 18, d16 Y, d17
    CbCr, d18 to d20 the grain, q11 the tone, q3 the change of Y. FILM_LAYER: one layer with grain \z, weight
    \k, and sums at \sum. */
 __asm__(
@@ -593,13 +616,14 @@ __asm__(
     "    vdup.16 d29, d0[2]\n"
     "    ldr r10, [r0, #40]\n"
     "    vdup.32 d5, r10\n"
-    "    movw r10, #" GRAIN_STR(TONE_LEFT) "\n"
+    "    ldrh r10, [r11, #34]\n"
     "    vdup.16 q4, r10\n"
-    "    movw r10, #" GRAIN_STR(TONE_RIGHT) "\n"
+    "    ldrh r10, [r11, #36]\n"
     "    vdup.16 q5, r10\n"
     "    vmov.i16 q6, #255\n"
     "    vmov.i8 d14, #128\n"
-    "    vmov.i8 d15, #" GRAIN_STR(TONE_PEAK) "\n"
+    "    ldrb r10, [r11, #32]\n"
+    "    vdup.8 d15, r10\n"
     "1:  vld1.8 {d16}, [r1]\n"
     "    vld1.8 {d17}, [r2]!\n"
     "    vld1.8 {d18}, [r3]!\n"
@@ -647,13 +671,14 @@ __asm__(
     "    vld1.16 {d2-d3}, [r10]\n"
     "    vdup.16 d5, d3[1]\n"
     "    mov r6, r2\n"
-    "    movw r7, #" GRAIN_STR(TONE_LEFT) "\n"
+    "    ldrh r7, [r11, #18]\n"
     "    vdup.16 q4, r7\n"
-    "    movw r7, #" GRAIN_STR(TONE_RIGHT) "\n"
+    "    ldrh r7, [r11, #20]\n"
     "    vdup.16 q5, r7\n"
     "    vmov.i16 q6, #255\n"
     "    vmov.i8 d14, #128\n"
-    "    vmov.i8 d15, #" GRAIN_STR(TONE_PEAK) "\n"
+    "    ldrb r7, [r11, #16]\n"
+    "    vdup.8 d15, r7\n"
     "1:  vld1.8 {d16}, [r1]\n"
     "    vld1.8 {d17}, [r2]!\n"
     "    vld1.8 {d18}, [r3]!\n"
@@ -691,9 +716,10 @@ __asm__(
     "9:  vpop {d8-d15}\n"
     "    pop {r4, r5, r6, r7, r8, r9, r10, r11, pc}\n"
     ".size grain_film_blocks, .-grain_film_blocks\n"
-    /* grain_mono_blocks: d1[0] the scale, q1 255, q2 TONE_LEFT, q3
-       TONE_RIGHT (s16), d16 128 and d17 TONE_PEAK (u8); the grain at z[0].
-       It keeps d8 to d15 and r4 to r11. */
+    /* grain_mono_blocks: d1[0] the scale, q1 255, q2 and q3 the K of the
+       tone below and above its peak (s16), d16 128 and d17 the peak (u8),
+       from constants 16 to 18; the grain at z[0]. It keeps d8 to d15 and r4
+       to r11. */
     ".p2align 2\n"
     ".global grain_mono_blocks\n"
     ".type grain_mono_blocks, %function\n"
@@ -705,13 +731,14 @@ __asm__(
     "    ldr r2, [r0, #8]\n"
     "    ldr r12, [r0, #36]\n"
     "    vld1.16 {d0-d1}, [r12]\n"
-    "    movw r12, #" GRAIN_STR(TONE_LEFT) "\n"
-    "    vdup.16 q2, r12\n"
-    "    movw r12, #" GRAIN_STR(TONE_RIGHT) "\n"
-    "    vdup.16 q3, r12\n"
+    "    ldrh r0, [r12, #34]\n"
+    "    vdup.16 q2, r0\n"
+    "    ldrh r0, [r12, #36]\n"
+    "    vdup.16 q3, r0\n"
     "    vmov.i16 q1, #255\n"
     "    vmov.i8 d16, #128\n"
-    "    vmov.i8 d17, #" GRAIN_STR(TONE_PEAK) "\n"
+    "    ldrb r0, [r12, #32]\n"
+    "    vdup.8 d17, r0\n"
     "1:  vld1.8 {d18}, [r1]\n"
     "    vld1.8 {d19}, [r2]!\n"
     "    vsubl.u8 q10, d18, d17\n"
@@ -910,7 +937,8 @@ void grain_chroma_blocks(const GrainChroma *b)
 #endif
 
 /* The scalars of grain_luma_blocks for a plane of `scale` (grain_scale),
-   d0 and d1. */
+   d0 and d1, the weights of grain_film_blocks, d2 and d3, and the tone of
+   the picture: its peak and its K below and above the peak, 16 to 18. */
 static void grain_constants(Scratch *s, u32 scale)
 {
     short *k = s->constants;
@@ -929,6 +957,10 @@ static void grain_constants(Scratch *s, u32 scale)
     k[12] = -2664;
     k[13] = -7;
     k[14] = k[15] = 0;
+    k[16] = tones[tone_kind][TONE_PEAK];
+    k[17] = tones[tone_kind][TONE_LEFT];
+    k[18] = tones[tone_kind][TONE_RIGHT];
+    for (u32 i = 19; i < 24U; ++i) k[i] = 0;
     for (u32 i = 0; i < 8U; ++i) {
         s->edge_weights[i] = grain_blend_weight[i];
         s->edge_weights[8 + i] = (short)(256 - grain_blend_weight[i]);
@@ -1163,15 +1195,22 @@ static void grain_color(const Plane *p, Scratch *s, u32 seed, int scale)
     }
 }
 
-/* The grain size of a shot for CORE.GRAIN_SIZE Auto: by its ISO. */
+/* The grain size for CORE.GRAIN_SIZE Auto: by the exposure index of the
+   film of the effect (picture_film), else by the ISO of the shot. */
 static u32 size_of_iso(const PictureSet *set)
 {
     GrkitShot shot;
-    shot.size = sizeof(GrkitShot);
-    shot.known = 0;
-    picture_shot(set, &shot);
-    if (!(shot.known & GRKIT_SHOT_EXPOSURE)) return 1;
-    return shot.iso <= 400U ? 1U : shot.iso <= 800U ? 2U : 3U;
+    u32 film = picture_film(set), iso;
+    if (film & GRKIT_FILM_KNOWN) {
+        iso = GRKIT_FILM_ISO(film);
+    } else {
+        shot.size = sizeof(GrkitShot);
+        shot.known = 0;
+        picture_shot(set, &shot);
+        if (!(shot.known & GRKIT_SHOT_EXPOSURE)) return 1;
+        iso = shot.iso;
+    }
+    return iso <= 400U ? 1U : iso <= 800U ? 2U : 3U;
 }
 
 /* The seed of a picture: some samples of the main picture and the shot, so
@@ -1205,7 +1244,8 @@ void grain_draw(PictureSet *set, u32 level, u32 size)
         if (set->planes[i].width > main->width) main = &set->planes[i];
     if (main->right <= main->left || main->bottom <= main->top) return;
     Scratch *s = (Scratch *)(void *)set->scratch;
-    u32 state = seed_of(set, main);
+    u32 state = seed_of(set, main), film = picture_film(set);
+    tone_kind = (film & GRKIT_FILM_KNOWN) && (film & GRKIT_FILM_POSITIVE) ? TONE_SLIDE : TONE_PRINT;
     grain_tiles(s, set->mono ? 1U : TEXTURES, area_halves[level - 1U], blur_of_size[size - 1U], &state);
     for (u32 i = 0; i < set->count; ++i) {
         const Plane *p = &set->planes[i];

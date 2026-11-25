@@ -24,6 +24,13 @@ void picture_shot(const PictureSet *set, GrkitShot *shot)
     (void)set;
     shot->known = 0;
 }
+/* The film of each case: none, or a slide film of EI 100. */
+static u32 parity_film;
+u32 picture_film(const PictureSet *set)
+{
+    (void)set;
+    return parity_film;
+}
 u32 divide(u32 n, u32 d)
 {
     u32 q = 0, bit = 1;
@@ -141,6 +148,7 @@ int parity_main(void)
     u32 failures = 0;
     for (u32 c = 0; c < CASES; ++c) {
         u32 level = 1 + c % 4U, size = 1 + below(3), half = below(2), mono = below(5) == 0;
+        parity_film = c & 2U ? GRKIT_FILM_KNOWN | GRKIT_FILM_POSITIVE | 100U << 16 : 0;
         u32 area[4] = {0, 0, 0, 0};
         if (c & 1U)
             for (u32 i = 0; i < 4; ++i) area[i] = below(70);
@@ -152,9 +160,9 @@ int parity_main(void)
         }
         if (!same(memory[0], memory[1], PLANE_BYTES)) {
             char text[96], *o = text;
-            const char *labels[5] = {"differs: case ", " level ", " size ", " half ", " mono "};
-            u32 values[5] = {c, level, size, half, mono};
-            for (u32 i = 0; i < 5; ++i) {
+            const char *labels[6] = {"differs: case ", " level ", " size ", " half ", " mono ", " slide "};
+            u32 values[6] = {c, level, size, half, mono, parity_film != 0};
+            for (u32 i = 0; i < 6; ++i) {
                 for (const char *l = labels[i]; *l; ++l) *o++ = *l;
                 o = put(o, values[i]);
             }
