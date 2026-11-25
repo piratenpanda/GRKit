@@ -131,6 +131,10 @@
       "sha256": "a2bad0a9abd1334695a5d63c4da5ba8ca0bc6ad2fe9f60719441095b1fd2509b",
       "upstream": "luts/bw/fuji_neopan_acros_100.cube"
     },
+    "portra-160-endura-v1.cube": {
+      "generator": "spektrafilm",
+      "sha256": "eddfc1e1259a413a2c870c4968624033548150b400649b240a42d1f79d77ea55"
+    },
     "portra-160-vc-v1.cube": {
       "generator": "film_luts",
       "sha256": "9dfc81b0d45773924c88ddd21a00ad27c51ccbcfa455899aa41b1de36a82cc2e",
@@ -139,6 +143,14 @@
     "portra-400-endura-v1.cube": {
       "generator": "spektrafilm",
       "sha256": "e2d43bebfdcc0744e54d95f88bdf32a4a0505b358db04353af72d2ef1c605682"
+    },
+    "portra-800-endura-v1.cube": {
+      "generator": "spektrafilm",
+      "sha256": "b50c56b46f80562b164002adb42271e27ccaa8be7d0044ac42dd31c4379dc8eb"
+    },
+    "portra-800-push1-v1.cube": {
+      "generator": "spektrafilm",
+      "sha256": "b7d6f3e94d9f824de789036b5f0b63822f6426fb553afed639204de346e4630d"
     },
     "portra-800-push2-v1.cube": {
       "generator": "spektrafilm",
@@ -178,6 +190,14 @@
       "generator": "spektrafilm",
       "sha256": "49c8b99b4edfc901ea3ec3a364d939947da492c934bb96067c6484d1f5154b52"
     },
+    "verita-200d-2383-v1.cube": {
+      "generator": "spektrafilm",
+      "sha256": "4d09dc050518c5c7fba732fc10ebf6ce0fc0409524793972c6023c8b16f09c4f"
+    },
+    "vision3-200t-2393-v1.cube": {
+      "generator": "spektrafilm",
+      "sha256": "700268ec3c62a812fda10eeec88e9ba813945751c7cf5e0c352ae27a634d6535"
+    },
     "vision3-250d-2383-v1.cube": {
       "generator": "spektrafilm",
       "sha256": "6deeaf3c1f84f4ccb0e3005dc722e127a507534b08b82ea3cf5d55945eaf3684"
@@ -185,6 +205,10 @@
     "vision3-500t-supra-v1.cube": {
       "generator": "spektrafilm",
       "sha256": "f7a319e548e8e3cd5d932f7c16e5b4073fbf624ab2efc0b2261053ead83cc665"
+    },
+    "vision3-50d-2383-v1.cube": {
+      "generator": "spektrafilm",
+      "sha256": "83a6093ba950a96cbcc85233b0a3abc73f649aac8aacee845021fd1b3120b53a"
     },
     "vista-200-v1.cube": {
       "generator": "film_luts",
