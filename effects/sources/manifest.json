@@ -56,7 +56,7 @@
       "license": "upstream-changes"
     },
     "bake_spektrafilm.py": {
-      "sha256": "ead802e197c19af63f2049427f6f241571f1c4cb2799dd933d2d0abcb743f712",
+      "sha256": "56ac4e2282cbc63ed9664149718d5358bbbedca163d0af75600a959e88ab3629",
       "license": "project"
     },
     "bake_spectral_film_lut.py": {
