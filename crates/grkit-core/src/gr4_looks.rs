@@ -521,6 +521,7 @@ impl Image {
             hue_sectors: None,
             native_look: Some(self.multiaxial(image_type)?),
             fn_defaults: Some(defaults),
+            film: None,
         })
     }
 
@@ -614,6 +615,7 @@ fn gray_effect(look: &Look, curve: Curve) -> Effect {
             .iter()
             .any(|v| *v != 0)
             .then_some(look.defaults),
+        film: None,
     }
 }
 

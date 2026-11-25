@@ -20,6 +20,12 @@
     "name": "5207",
     "number": "250D"
   },
+  "film": {
+    "type": "negative",
+    "use": "cine",
+    "antihalation": "strong",
+    "iso": 250
+  },
   "attribution": {
     "origin": "cube-fit",
     "license": "CC-BY-SA-4.0",

@@ -893,9 +893,12 @@
 #define GRKIT_RECORD_POST 0x704
 /* Selective color for recorded pictures: i16 cos and sin of the target hue
    (Q12), u16 inner and outer tangents toward smaller hue angles, then toward
-   larger ones (Q8), and u8 chroma gate c0 and c1. Bytes 0x724..0x72a are
-   reserved and zero. */
+   larger ones (Q8), and u8 chroma gate c0 and c1. */
 #define GRKIT_RECORD_SELECTIVE 0x716
+/* The film of the effect (feature 128), as the GRF holds it: u8 flags
+   (GRKIT_FILM_*), a zero byte, and the u16 exposure index. Bytes 0x728..0x72a
+   are reserved and zero. */
+#define GRKIT_RECORD_FILM 0x724
 /* The grain that this effect has by itself: 0 none, 1 the Rough grain of GR IV
    firmware (other cameras give 2), or 2 strong grain of medium size while the
    Grain module is Off. INSTALL sets it from the effect ID. It is the last
@@ -961,9 +964,13 @@
    tangents, and two u8 chroma limits. */
 #define GRKIT_GRF_SELECTIVE 106U
 #define GRKIT_GRF_SELECTIVE_SIZE 14U
+/* The film (feature 128): u8 flags (GRKIT_FILM_*), a zero byte, and the u16
+   exposure index. */
+#define GRKIT_GRF_FILM 120U
+#define GRKIT_GRF_FILM_SIZE 4U
 /* Reserved and zero. */
-#define GRKIT_GRF_RESERVED 120U
-#define GRKIT_GRF_RESERVED_SIZE 8U
+#define GRKIT_GRF_RESERVED 124U
+#define GRKIT_GRF_RESERVED_SIZE 4U
 /* i16[9] signed Q13 color matrix. */
 #define GRKIT_GRF_MATRIX 128U
 #define GRKIT_GRF_MATRIX_SIZE 18U
@@ -1012,6 +1019,13 @@
 #define GRKIT_FEATURE_HUE_LEVELS 16U
 #define GRKIT_FEATURE_NATIVE_LOOK 32U
 #define GRKIT_FEATURE_FN_DEFAULTS 64U
+#define GRKIT_FEATURE_FILM 128U
+/* The flags of the film of feature 128 (grkit_core::film), and the bit that
+   picture_film sets for an effect with a film. */
+#define GRKIT_FILM_POSITIVE 1U
+#define GRKIT_FILM_CINE 2U
+#define GRKIT_FILM_WEAK_ANTIHALATION 4U
+#define GRKIT_FILM_KNOWN 0x80U
 /* The default Fn adjustments of feature 64: 9 i8 (-4..4) in the order of
    GRKIT_RECORD_PARAMETERS, in a file of GRKIT_GRF_MAX_SIZE bytes. */
 #define GRKIT_GRF_FN_DEFAULTS 8624U

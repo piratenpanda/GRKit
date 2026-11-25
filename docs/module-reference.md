@@ -386,6 +386,7 @@ A module calls the core only through these functions. The installer links each c
 | `void local_time(GrkitDateTime *out)` | The local time: year, month, day, hour, minute, and second. |
 | `u32 divide(u32 n, u32 d)` | n / d, rounded down, for d > 0. |
 | `void picture_white(const PictureSet *set, u8 white[3])` | The R, G, B white of the effect of a recorded picture: the levels that its brightest light reaches. 255 each without an effect. A color effect ends below 255. Since ABI 2.1. |
+| `u32 picture_film(const PictureSet *set)` | The film stock of the effect of a recorded picture: `GRKIT_FILM_KNOWN`, the bits `GRKIT_FILM_POSITIVE` (a slide film, scanned directly), `GRKIT_FILM_CINE` (a motion picture film), and `GRKIT_FILM_WEAK_ANTIHALATION`, and the exposure index in the high half (`GRKIT_FILM_ISO`). 0 without an effect and for an effect without `film`. Since ABI 2.8. |
 | `void picture_shot(const PictureSet *set, GrkitShot *shot)` | The shooting data of a recorded picture, as its EXIF records it: the exposure (APEX values, the exposure value of the scene, the f-number, the ISO speed, the exposure time), the exposure compensation, the focal length, the program, the metering, the flash, and the capture time. Set `shot->size` to `sizeof(GrkitShot)` first. `known` has a bit for each group of fields that holds a value. Since ABI 2.1. |
 | `u32 timer_start(u32 ms, void (*fire)(u32 arg), u32 arg)` | Call `fire(arg)` once, `ms` milliseconds later, in the App task. Returns a timer, or 0 when no timer is free or the caller is not in the App task. |
 | `void timer_cancel(u32 timer)` | Stop a timer that has not fired. |
@@ -439,7 +440,7 @@ The UI services work only in an event handler, a timer callback, or a UI callbac
 
 ## ABI and compatibility
 
-**ABI version.** `GRKIT_ABI` is 2.7: the major version in the high 16 bits, the minor version in the low 16 bits. The build writes it into the file header and into the descriptor. The installer loads a module whose major version equals that of the core and whose minor version is not larger. A minor version adds capabilities without changing existing contracts. A major version can change an existing layout.
+**ABI version.** `GRKIT_ABI` is 2.8: the major version in the high 16 bits, the minor version in the low 16 bits. The build writes it into the file header and into the descriptor. The installer loads a module whose major version equals that of the core and whose minor version is not larger. A minor version adds capabilities without changing existing contracts. A major version can change an existing layout.
 
 In 2.0, each text list also has a Korean text. The installer rejects a module with ABI 1.0 (status 51). Build such a module again with a `text/ko.toml`.
 
@@ -467,6 +468,8 @@ ABI 2.5 appends the Fn value and setting of `fn_cycle` to `GrkitPage`, increasin
 ABI 2.6 adds the capabilities `CORE.CROP`, `CORE.CROP_MODE`, `CORE.BORDER`, and `CORE.BORDER_COLOR`. `Surface` keeps its layout.
 
 ABI 2.7 gives `CORE.ASPECT` the value 8, 3:4, and lets a settings row have up to 64 values (`GRKIT_SETTING_ROW_VALUES`); a row with more than 8 lists them on a long value page. A page of `CORE.ASPECT` can have fewer rows than its values: the rows are the values from 0, and a later value has no row. `LABEL_RATIO` names the label of a later capture area, such as 3:4, through the core (`LABEL_RATIO_AREA`). The labels keep their numbers. The installer of an earlier core rejects an ABI 2.7 module.
+
+ABI 2.8 adds `picture_film`, which gives the film stock of the effect (the `film` of its definition, feature 128). The installer of an earlier core rejects an ABI 2.8 module.
 
 **File format.** A module file is GRM version 1 (`grkit_core::grm`): a header, the code, the data, the relocations, the imports, and the tiles. The build compiles each source as Thumb code for ARMv7-A with `-Os`. The installer only moves absolute 32-bit words and fills the imports by name hash. The build rejects other relocation types and each undefined symbol that is not a service or `grkit_self`.
 

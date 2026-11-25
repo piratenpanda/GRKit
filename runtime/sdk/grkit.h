@@ -21,7 +21,7 @@ typedef signed int s32;
    equals that of the core and whose minor version is not larger. A minor
    version adds functions, registration types, or trailing descriptor fields. */
 #define GRKIT_ABI_MAJOR 2U
-#define GRKIT_ABI_MINOR 7U
+#define GRKIT_ABI_MINOR 8U
 #define GRKIT_ABI (GRKIT_ABI_MAJOR << 16 | GRKIT_ABI_MINOR)
 
 /* ---- overlay.layer -------------------------------------------------------- */
@@ -437,6 +437,16 @@ typedef struct {
     GrkitDateTime taken; /* the capture time, as EXIF DateTimeOriginal */
 } GrkitShot;
 void picture_shot(const PictureSet *set, GrkitShot *shot);
+/* The film stock of the effect of a recorded picture, for a filter that draws
+   what the film would (grain, halation): GRKIT_FILM_KNOWN, the GRKIT_FILM_*
+   bits, and the exposure index of the film (GRKIT_FILM_ISO). It is 0 without
+   an effect and for an effect that names no film. Since ABI 2.8. */
+#define GRKIT_FILM_POSITIVE 1U          /* a slide film, scanned directly; else a negative printed on paper */
+#define GRKIT_FILM_CINE 2U              /* a motion picture film on a PET base; else a still film */
+#define GRKIT_FILM_WEAK_ANTIHALATION 4U /* a weak anti-halation layer */
+#define GRKIT_FILM_KNOWN 0x80U
+#define GRKIT_FILM_ISO(film) ((film) >> 16)
+u32 picture_film(const PictureSet *set);
 
 /* ---- events --------------------------------------------------------------
 

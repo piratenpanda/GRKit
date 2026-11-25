@@ -448,6 +448,7 @@ impl Image {
                 &relative,
             )?),
             fn_defaults: None,
+            film: None,
         })
     }
 

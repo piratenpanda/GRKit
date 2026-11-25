@@ -31,6 +31,8 @@ extern u8 grkit_test_white[3];
 /* The data that picture_shot gives: none known at start. Its `size` is
    ignored; picture_shot fills the caller's size. */
 extern GrkitShot grkit_test_shot;
+/* The value that picture_film gives: 0, no film, at start. */
+extern u32 grkit_test_film;
 /* The scratch of a PictureSet, GRKIT_PLANE_SCRATCH bytes. */
 extern u8 grkit_test_scratch[];
 /* The pixel at (x, y), and the value of each pixel after grkit_test_clear. */

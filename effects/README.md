@@ -22,8 +22,9 @@ The compiler writes self-contained GRFX0001 files with a 40 x 40 icon. `golden.j
 | `selective_color` | No | Keeps the chroma of one hue range. `crates/grkit-core/src/selective.rs` defines the fields. |
 | `hue_sectors` | No | The camera's hue-sector stage. `crates/grkit-core/src/hue.rs` defines the fields. |
 | `native_look` | No | The hue-sector set and tone offsets of a look from camera firmware. It excludes `hue_sectors`. `crates/grkit-core/src/native_look.rs` defines the fields. |
+| `film` | No | The film stock that the look simulates: `type` (`negative` or `positive`), `use` (`still` or `cine`), `antihalation` (`strong` or `weak`), and `iso`, its exposure index. Grain and Glow draw the grain and the halation of that film. `crates/grkit-core/src/film.rs` defines the fields. |
 
-A monochrome effect cannot have `post_matrix`, `selective_color`, `hue_sectors`, or `native_look`.
+A monochrome effect cannot have `post_matrix`, `selective_color`, `hue_sectors`, `native_look`, or `film`.
 
 ## Icons
 
@@ -49,7 +50,7 @@ To refit an effect:
 1. Bake its LUT with the script and the generator revision in `sources/manifest.json`. For a HaldCLUT, download the file at its `upstream` path.
 2. Compare the SHA-256 with the manifest. Floating-point results can differ on another platform.
 3. Run `grkit effects import` with the `input` and `exposure` of the old `attribution`.
-4. Restore `icon` and the `license`, `target`, and `generator` of `attribution`. Then update `golden.json`.
+4. Restore `icon`, `film`, and the `license`, `target`, and `generator` of `attribution`. Then update `golden.json`.
 
 ## Import a LUT
 

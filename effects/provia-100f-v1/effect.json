@@ -21,6 +21,12 @@
     "number": "100F",
     "band": true
   },
+  "film": {
+    "type": "positive",
+    "use": "still",
+    "antihalation": "strong",
+    "iso": 100
+  },
   "attribution": {
     "origin": "cube-fit",
     "license": "CC-BY-SA-4.0",

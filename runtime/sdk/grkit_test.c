@@ -9,6 +9,7 @@ u8 grkit_test_scratch[GRKIT_PLANE_SCRATCH];
 GrkitDateTime grkit_test_time = {2026, 10, 25, 9, 5, 0, 0};
 u8 grkit_test_white[3] = {255, 255, 255};
 GrkitShot grkit_test_shot;
+u32 grkit_test_film;
 u32 grkit_test_settings[GRKIT_TEST_SETTINGS];
 u32 grkit_test_labels;
 u32 grkit_test_label[3];
@@ -49,6 +50,11 @@ void picture_shot(const PictureSet *set, GrkitShot *shot)
     if (size < 8) return;
     copy.size = size;
     memcpy(shot, &copy, size);
+}
+u32 picture_film(const PictureSet *set)
+{
+    (void)set;
+    return grkit_test_film;
 }
 void grkit_test_clear(void)
 {

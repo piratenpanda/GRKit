@@ -41,21 +41,31 @@ static int valid_selective(const u8 *p)
     }
     return p[12]<p[13] && p[13]<=181;
 }
+/* The bounds of grkit_core::film: known flags, a zero byte, and an exposure
+   index of 1 to 12800. */
+static int valid_film(const u8 *p)
+{
+    u32 iso=grf_get16(p+2);
+    return !(p[0]&~(GRKIT_FILM_POSITIVE|GRKIT_FILM_CINE|GRKIT_FILM_WEAK_ANTIHALATION)) && !p[1] &&
+        iso>=1 && iso<=12800;
+}
 /* Each feature bit owns its field, and an unused field stays zero. An effect
    without features has zeros in the whole extension. A monochrome effect has
    no features but its Fn defaults (feature 64). */
 static int valid_extension(const u8 *p)
 {
     u32 features=grf_get32(p+GRKIT_GRF_FEATURES);
-    if ((features & ~(GRKIT_FEATURE_POST|GRKIT_FEATURE_SELECTIVE|GRKIT_FEATURE_HUE|GRKIT_FEATURE_HUE_LEVELS|GRKIT_FEATURE_NATIVE_LOOK|GRKIT_FEATURE_FN_DEFAULTS)) ||
+    if ((features & ~(GRKIT_FEATURE_POST|GRKIT_FEATURE_SELECTIVE|GRKIT_FEATURE_HUE|GRKIT_FEATURE_HUE_LEVELS|GRKIT_FEATURE_NATIVE_LOOK|GRKIT_FEATURE_FN_DEFAULTS|GRKIT_FEATURE_FILM)) ||
         !zeros(p+GRKIT_GRF_RESERVED,GRKIT_GRF_RESERVED_SIZE)) return 0;
     if ((features&GRKIT_FEATURE_HUE_LEVELS) && !(features&GRKIT_FEATURE_HUE)) return 0;
     /* A native look excludes hue sectors. */
     if ((features&GRKIT_FEATURE_NATIVE_LOOK) && (features&(GRKIT_FEATURE_HUE|GRKIT_FEATURE_HUE_LEVELS))) return 0;
     if (!(features&GRKIT_FEATURE_POST) && !zeros(p+GRKIT_GRF_POST,GRKIT_GRF_POST_SIZE)) return 0;
     if (!(features&GRKIT_FEATURE_SELECTIVE) && !zeros(p+GRKIT_GRF_SELECTIVE,GRKIT_GRF_SELECTIVE_SIZE)) return 0;
+    if (!(features&GRKIT_FEATURE_FILM) && !zeros(p+GRKIT_GRF_FILM,GRKIT_GRF_FILM_SIZE)) return 0;
     if ((features&~GRKIT_FEATURE_FN_DEFAULTS) && grf_get32(p+GRKIT_GRF_FLAGS)==1) return 0;
     if ((features&GRKIT_FEATURE_SELECTIVE) && !valid_selective(p+GRKIT_GRF_SELECTIVE)) return 0;
+    if ((features&GRKIT_FEATURE_FILM) && !valid_film(p+GRKIT_GRF_FILM)) return 0;
     return 1;
 }
 /* Each row's diagonal, 128 minus its two coefficients, fits the 12-bit register

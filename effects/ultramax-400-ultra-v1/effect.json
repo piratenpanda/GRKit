@@ -21,6 +21,12 @@
     "number": "400",
     "band": true
   },
+  "film": {
+    "type": "negative",
+    "use": "still",
+    "antihalation": "weak",
+    "iso": 400
+  },
   "attribution": {
     "origin": "cube-fit",
     "license": "CC-BY-SA-4.0",

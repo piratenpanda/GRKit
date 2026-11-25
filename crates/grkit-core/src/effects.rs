@@ -9,7 +9,8 @@
 //! (`native_look`), excludes features 8 and 16: its MultiAxial set fills the hue area and
 //! the bytes from `SIZE` of a `SIZE_WITH_LEVELS` file. Feature 64 gives the effect default
 //! Fn adjustments: nine i8 at `FN_DEFAULTS` of a `SIZE_WITH_LEVELS` file, after the data of
-//! features 16 and 32, so it goes with any effect, monochrome ones included.
+//! features 16 and 32, so it goes with any effect, monochrome ones included. Feature 128 names
+//! the film stock of a color effect (`film`) in four bytes of the extension, at `GRF_FILM`.
 
 use anyhow::{ensure, Context, Result};
 use serde::{
@@ -21,9 +22,10 @@ use sha2::{Digest, Sha256};
 use std::fmt;
 
 use crate::abi::{
-    GRF_BYTES, GRF_CRC, GRF_CURVES, GRF_FEATURES, GRF_FLAGS, GRF_HUE, GRF_ICON, GRF_ID, GRF_MAGIC,
-    GRF_MATRIX, GRF_NAME, GRF_PADDING, GRF_POST, GRF_RESERVED, GRF_SELECTIVE,
+    GRF_BYTES, GRF_CRC, GRF_CURVES, GRF_FEATURES, GRF_FILM, GRF_FLAGS, GRF_HUE, GRF_ICON, GRF_ID,
+    GRF_MAGIC, GRF_MATRIX, GRF_NAME, GRF_PADDING, GRF_POST, GRF_RESERVED, GRF_SELECTIVE,
 };
+use crate::film::Film;
 use crate::hue;
 use crate::native_look::{self, NativeLook};
 use crate::selective::Selective;
@@ -50,12 +52,15 @@ pub const FEATURE_HUE_LEVELS: u32 = 16;
 pub const FEATURE_NATIVE_LOOK: u32 = 32;
 /// Default Fn adjustments, at `FN_DEFAULTS`.
 pub const FEATURE_FN_DEFAULTS: u32 = 64;
+/// The film stock (`film`), at `GRF_FILM`.
+pub const FEATURE_FILM: u32 = 128;
 const FEATURES: u32 = FEATURE_POST
     | FEATURE_SELECTIVE
     | FEATURE_HUE_SECTORS
     | FEATURE_HUE_LEVELS
     | FEATURE_NATIVE_LOOK
-    | FEATURE_FN_DEFAULTS;
+    | FEATURE_FN_DEFAULTS
+    | FEATURE_FILM;
 /// The Fn adjustments in the order of the record (`abi::RECORD_PARAMETERS`).
 pub const FN_KEYS: [&str; 9] = [
     "saturation",
@@ -79,12 +84,13 @@ const _: () = assert!(SIZE + hue::LEVEL_SIZE <= FN_DEFAULTS && FN_DEFAULTS_END <
 pub const HUE_OFFSET: usize = GRF_HUE;
 /// Optional keys of both a definition and a decoded effect. A definition writes
 /// `selective_color` in degrees; a decoded effect holds its GRF integers.
-const EXTENSION_KEYS: [&str; 5] = [
+const EXTENSION_KEYS: [&str; 6] = [
     "post_matrix",
     "selective_color",
     "hue_sectors",
     "native_look",
     "fn_defaults",
+    "film",
 ];
 
 struct UniqueValue(Value);
@@ -197,6 +203,8 @@ pub struct Effect {
     pub native_look: Option<NativeLook>,
     /// Feature 64, in the order of `FN_KEYS`.
     pub fn_defaults: Option<[i8; 9]>,
+    /// Feature 128.
+    pub film: Option<Film>,
 }
 
 /// The `fn_defaults` object: each of `FN_KEYS` with -4..=4.
@@ -303,6 +311,7 @@ impl Effect {
                 .map(NativeLook::from_json)
                 .transpose()?,
             fn_defaults: value.get("fn_defaults").map(read_fn_defaults).transpose()?,
+            film: value.get("film").map(Film::from_json).transpose()?,
         };
         effect.check()?;
         Ok(effect)
@@ -318,7 +327,7 @@ impl Effect {
                 &["effect_id", "name", "matrix", "curves"],
                 &optional
             ),
-            "Expected effect_id, name, matrix, curves, and optional flags, post_matrix, selective_color, hue_sectors, native_look, and fn_defaults"
+            "Expected effect_id, name, matrix, curves, and optional flags, post_matrix, selective_color, hue_sectors, native_look, fn_defaults, and film"
         );
         let selective = value
             .get("selective_color")
@@ -347,6 +356,9 @@ impl Effect {
         if let Some(defaults) = &self.fn_defaults {
             value["fn_defaults"] = fn_defaults_json(defaults);
         }
+        if let Some(film) = &self.film {
+            value["film"] = film.to_json();
+        }
         value
     }
 
@@ -373,6 +385,9 @@ impl Effect {
         }
         if self.fn_defaults.is_some() {
             features |= FEATURE_FN_DEFAULTS;
+        }
+        if self.film.is_some() {
+            features |= FEATURE_FILM;
         }
         features
     }
@@ -411,6 +426,7 @@ impl Effect {
                 self.hue_sectors.is_none() && self.native_look.is_none(),
                 "Monochrome effects cannot have hue sectors or a native look"
             );
+            ensure!(self.film.is_none(), "Monochrome effects cannot have a film");
             let m = &self.matrix;
             let c = &self.curves;
             ensure!(
@@ -440,7 +456,10 @@ impl Effect {
             blob[at..at + 2].copy_from_slice(&value.to_le_bytes());
         }
         if let Some(selective) = &self.selective {
-            blob[GRF_SELECTIVE..GRF_RESERVED].copy_from_slice(&selective.to_bytes());
+            blob[GRF_SELECTIVE..GRF_FILM].copy_from_slice(&selective.to_bytes());
+        }
+        if let Some(film) = &self.film {
+            blob[GRF_FILM..GRF_RESERVED].copy_from_slice(&film.to_bytes());
         }
         if let Some(sectors) = &self.hue_sectors {
             blob[HUE_OFFSET..HUE_OFFSET + hue::SIZE].copy_from_slice(&sectors.to_bytes());
@@ -627,9 +646,14 @@ pub fn decode(blob: &[u8]) -> Result<(Effect, Vec<u8>)> {
         features & FEATURE_POST != 0 || post.iter().all(|v| *v == 0),
         "Unsupported effect features"
     );
-    let selective = &blob[GRF_SELECTIVE..GRF_RESERVED];
+    let selective = &blob[GRF_SELECTIVE..GRF_FILM];
     ensure!(
         features & FEATURE_SELECTIVE != 0 || selective.iter().all(|v| *v == 0),
+        "Unsupported effect features"
+    );
+    let film = &blob[GRF_FILM..GRF_RESERVED];
+    ensure!(
+        features & FEATURE_FILM != 0 || film.iter().all(|v| *v == 0),
         "Unsupported effect features"
     );
     let effect = Effect {
@@ -657,6 +681,9 @@ pub fn decode(blob: &[u8]) -> Result<(Effect, Vec<u8>)> {
             .transpose()?,
         native_look: native.then(|| NativeLook::read(blob)).transpose()?,
         fn_defaults: defaults.then(|| std::array::from_fn(|k| blob[FN_DEFAULTS + k] as i8)),
+        film: (features & FEATURE_FILM != 0)
+            .then(|| Film::from_bytes(film))
+            .transpose()?,
     };
     let icon = blob[GRF_ICON..GRF_ICON + ICON_SIZE].to_vec();
     effect.check()?;

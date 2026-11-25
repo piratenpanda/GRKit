@@ -253,6 +253,25 @@ fn monochrome_requires_identical_rows_and_channels() {
 }
 
 #[test]
+fn film_round_trips_and_needs_a_color_effect() {
+    let mut effect = fixture();
+    effect["film"] =
+        json!({"type": "negative", "use": "cine", "antihalation": "strong", "iso": 500});
+    let bytes = effects::encode(&effect, &vec![0; effects::ICON_SIZE]).unwrap();
+    assert_eq!(bytes.len(), effects::SIZE);
+    assert_eq!(
+        u32::from_le_bytes(bytes[84..88].try_into().unwrap()),
+        effects::FEATURE_FILM
+    );
+    assert_eq!(bytes[120..124], [2, 0, 0xf4, 0x01]);
+    let (decoded, _) = effects::decode(&bytes).unwrap();
+    assert_eq!(decoded.to_json()["film"], effect["film"]);
+    assert_eq!(decoded.film.unwrap().service_value(), 0x80 | 2 | 500 << 16);
+    effect["flags"] = json!(1);
+    assert!(effects::encode(&effect, &vec![0; effects::ICON_SIZE]).is_err());
+}
+
+#[test]
 fn corruption_reserved_fields_and_string_padding_are_rejected() {
     let bytes = effects::encode(&fixture(), &vec![0; effects::ICON_SIZE]).unwrap();
     for offset in [0, 8, 12, 16, 48, 80, 128, 148, 1684, 8084] {

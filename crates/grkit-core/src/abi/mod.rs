@@ -4,7 +4,7 @@
 
 use std::fmt::Write;
 
-use crate::{capabilities, effects, hue, menu_text, native_look, recipes, selective};
+use crate::{capabilities, effects, film, hue, menu_text, native_look, recipes, selective};
 
 /// A byte range of the private header, of a record, or of a GRF file.
 pub struct Field {
@@ -754,9 +754,12 @@ fields!(RECORD_FIELDS {
     RECORD_POST = 0x704, 18;
     /// Selective color for recorded pictures: i16 cos and sin of the target hue
     /// (Q12), u16 inner and outer tangents toward smaller hue angles, then toward
-    /// larger ones (Q8), and u8 chroma gate c0 and c1. Bytes 0x724..0x72a are
-    /// reserved and zero.
-    RECORD_SELECTIVE = 0x716, 0x72b - 0x716;
+    /// larger ones (Q8), and u8 chroma gate c0 and c1.
+    RECORD_SELECTIVE = 0x716, 0x724 - 0x716;
+    /// The film of the effect (feature 128), as the GRF holds it: u8 flags
+    /// (GRKIT_FILM_*), a zero byte, and the u16 exposure index. Bytes
+    /// 0x728..0x72a are reserved and zero.
+    RECORD_FILM = 0x724, 0x72b - 0x724;
     /// The grain that this effect has by itself: 0 none, 1 the Rough grain of GR IV
     /// firmware (other cameras give 2), or 2 strong grain of medium size while the
     /// Grain module is Off. INSTALL sets it from the effect ID. It is the last reserved
@@ -820,8 +823,11 @@ fields!(GRF_FIELDS {
     /// Selective color (feature 2): i16 cos and sin of the target hue, four u16
     /// tangents, and two u8 chroma limits.
     GRF_SELECTIVE = 106, selective::SIZE;
+    /// The film (feature 128): u8 flags (GRKIT_FILM_*), a zero byte, and the u16
+    /// exposure index.
+    GRF_FILM = 120, film::SIZE;
     /// Reserved and zero.
-    GRF_RESERVED = 120, 8;
+    GRF_RESERVED = 124, 4;
     /// i16[9] signed Q13 color matrix.
     GRF_MATRIX = 128, 18;
     /// Zero.
@@ -836,12 +842,13 @@ fields!(GRF_FIELDS {
 });
 
 // INSTALL copies a GRF into a record (runtime/installer.c): the matrix and the
-// curves to the coefficients, then the post matrix, the selective color, and
-// the reserved bytes.
+// curves to the coefficients, then the post matrix, the selective color, the
+// film, and the reserved bytes.
 const _: () = assert!(
     RECORD_NAME - RECORD_COEFFICIENTS == GRF_ICON - GRF_MATRIX
         && RECORD_CURVES - RECORD_COEFFICIENTS == GRF_CURVES - GRF_MATRIX
         && RECORD_SELECTIVE - RECORD_POST == GRF_SELECTIVE - GRF_POST
+        && RECORD_FILM - RECORD_POST == GRF_FILM - GRF_POST
         && RECORD_PARAMETERS - RECORD_POST == GRF_MATRIX - GRF_POST
 );
 
@@ -1296,6 +1303,21 @@ fn hue_tables(out: &mut String) {
         effects::FEATURE_FN_DEFAULTS
     )
     .unwrap();
+    writeln!(out, "#define GRKIT_FEATURE_FILM {}U", effects::FEATURE_FILM).unwrap();
+    comment(
+        out,
+        "The flags of the film of feature 128 (grkit_core::film), and the bit that \
+         picture_film sets for an effect with a film.",
+    );
+    writeln!(out, "#define GRKIT_FILM_POSITIVE {}U", film::FLAG_POSITIVE).unwrap();
+    writeln!(out, "#define GRKIT_FILM_CINE {}U", film::FLAG_CINE).unwrap();
+    writeln!(
+        out,
+        "#define GRKIT_FILM_WEAK_ANTIHALATION {}U",
+        film::FLAG_WEAK_ANTIHALATION
+    )
+    .unwrap();
+    writeln!(out, "#define GRKIT_FILM_KNOWN {:#x}U", film::KNOWN).unwrap();
     define(
         out,
         "The default Fn adjustments of feature 64: 9 i8 (-4..4) in the order of \

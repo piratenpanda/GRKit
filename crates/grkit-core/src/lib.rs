@@ -12,6 +12,7 @@ pub mod cover;
 mod cover_font;
 pub mod cube;
 pub mod effects;
+pub mod film;
 pub mod firmware;
 pub mod fit;
 pub mod goodbye;

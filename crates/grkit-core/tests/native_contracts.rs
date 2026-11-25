@@ -344,6 +344,32 @@ int main(int argc, char **argv) {
     let extended = effects::encode(&extended_effect, &vec![0; effects::ICON_SIZE]).unwrap();
     assert_eq!(&extended[..8], effects::MAGIC);
     corpus.push(("extended post".into(), extended.clone(), Some(true)));
+    // Film: feature 128, flags, a zero byte, and the exposure index at 120.
+    let mut film_effect = sample(false);
+    film_effect["film"] =
+        json!({"type": "positive", "use": "cine", "antihalation": "weak", "iso": 3200});
+    let film = effects::encode(&film_effect, &vec![0; effects::ICON_SIZE]).unwrap();
+    assert_eq!(film[120..124], [7, 0, 0x80, 0x0c]);
+    corpus.push(("film".into(), film.clone(), Some(true)));
+    let film_fields: Vec<(&str, usize, Vec<u8>)> = vec![
+        ("unknown flag", 120, vec![8]),
+        ("byte after the flags", 121, vec![1]),
+        ("exposure index 0", 122, 0_u16.to_le_bytes().to_vec()),
+        (
+            "exposure index past 12800",
+            122,
+            12801_u16.to_le_bytes().to_vec(),
+        ),
+        ("reserved byte", 124, vec![1]),
+        ("without its bit", 84, 0_u32.to_le_bytes().to_vec()),
+        ("monochrome flag", 80, 1_u32.to_le_bytes().to_vec()),
+    ];
+    for (description, offset, bytes) in film_fields {
+        let mut changed = film.clone();
+        changed[offset..offset + bytes.len()].copy_from_slice(&bytes);
+        repair_crc(&mut changed);
+        corpus.push((format!("film: {description}"), changed, Some(false)));
+    }
     // Hue sectors: 66 coefficients, then the control fields 10..20 at 8150.
     let mut hue_effect = sample(false);
     let matrices: Vec<Vec<i64>> = (0..11).map(|k| vec![3 - k, -2, k, 0, -4, 5 + k]).collect();

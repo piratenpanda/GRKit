@@ -21,6 +21,12 @@
     "number": "64",
     "band": true
   },
+  "film": {
+    "type": "positive",
+    "use": "still",
+    "antihalation": "weak",
+    "iso": 64
+  },
   "attribution": {
     "origin": "cube-fit",
     "license": "CC-BY-SA-4.0",

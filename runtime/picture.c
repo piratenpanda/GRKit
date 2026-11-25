@@ -258,6 +258,14 @@ __attribute__((used)) void grkit_export_picture_white(const PictureSet *set,u8 *
         white[k]=(u8)(((u32)v*255U+8192U)>>14);
     }
 }
+/* The film of the effect of a recorded picture (feature 128):
+   GRKIT_FILM_KNOWN, its flags, and its exposure index in the high half, or 0
+   without a record or a film. */
+__attribute__((used)) u32 grkit_export_picture_film(const PictureSet *set) {
+    u32 record=set->record;
+    if(!record || !(WORD(record,GRKIT_RECORD_FEATURES)&GRKIT_FEATURE_FILM)) return 0;
+    return GRKIT_FILM_KNOWN|BYTE(record,GRKIT_RECORD_FILM)|(u32)HALF(record,GRKIT_RECORD_FILM+2)<<16;
+}
 /* picture_shot: the shooting data of the shot of a plane set, in the
    layout of GrkitShot (GRKIT_SHOT_INFO_* in abi.h). */
 #define SHOT_INVALID ((int)0x80000000)
