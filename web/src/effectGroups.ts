@@ -19,8 +19,11 @@ export const EFFECT_GROUPS: Readonly<Record<string, EffectGroup>> = {
   'ektar-100-edge-v1': 'negative',
   'fuji-160c-v1': 'negative',
   'gold-200-premier-v1': 'negative',
+  'portra-160-endura-v1': 'negative',
   'portra-160-vc-v1': 'negative',
   'portra-400-endura-v1': 'negative',
+  'portra-800-endura-v1': 'negative',
+  'portra-800-push1-v1': 'negative',
   'portra-800-push2-v1': 'negative',
   'pro-400h-crystal-v1': 'negative',
   'ultramax-400-ultra-v1': 'negative',
@@ -35,7 +38,10 @@ export const EFFECT_GROUPS: Readonly<Record<string, EffectGroup>> = {
   'velvia-100-v1': 'slide',
 
   'eterna-500t-3523xd-v1': 'cinema',
+  'verita-200d-2383-v1': 'cinema',
+  'vision3-200t-2393-v1': 'cinema',
   'vision3-250d-2383-v1': 'cinema',
+  'vision3-50d-2383-v1': 'cinema',
   'vision3-500t-supra-v1': 'cinema',
 
   'instax-v1': 'instant',

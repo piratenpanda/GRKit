@@ -300,7 +300,7 @@ pub(super) const STOCK_LOOKS: [(&str, &str); 30] = [
     ("TRI-?X", "trix"),
     ("T-?MAX", "tmax"),
     ("DOUBLE-?X|5222", "doublex"),
-    ("VISION|5207|5219", "vision"),
+    ("VISION|5203|5207|5213|5219", "vision"),
     ("VELVIA", "velvia"),
     ("PROVIA", "provia"),
     ("ASTIA", "astia"),

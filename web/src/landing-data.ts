@@ -62,7 +62,7 @@ export const LANDING_LOOKS = [
 
 /** The film looks that each package can hold (effects/ in the repository), so the strip can say
     how many more there are than it shows. landing.test.ts checks it against effects/. */
-export const BUILT_IN_LOOKS = 30;
+export const BUILT_IN_LOOKS = 36;
 
 /** The photos of the landing page, credited where they show, with a link to their source page. */
 export const LANDING_PHOTOS = {

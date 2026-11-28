@@ -257,7 +257,7 @@ const STOCK_LOOKS: ReadonlyArray<{ readonly match: RegExp; readonly look: CoverL
   { match: /TRI-?X/, look: 'trix' },
   { match: /T-?MAX/, look: 'tmax' },
   { match: /DOUBLE-?X|5222/, look: 'doublex' },
-  { match: /VISION|5207|5219/, look: 'vision' },
+  { match: /VISION|5203|5207|5213|5219/, look: 'vision' },
   { match: /VELVIA/, look: 'velvia' },
   { match: /PROVIA/, look: 'provia' },
   { match: /ASTIA/, look: 'astia' },
