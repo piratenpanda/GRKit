@@ -34,12 +34,14 @@ export interface Grain {
   size: number;
 }
 
-/** Glow: Bloom and Halation 0 Off to 3 Strong, and the Halation color 0 Red, 1 Orange, 2 Gold,
- * 3 White, or null to keep the camera's. GR IV Monochrome has no color. */
+/** Glow: Bloom and Halation 0 Off to 3 Strong, the Halation color 0 Red, 1 Orange, 2 Gold,
+ * 3 White, or null to keep the camera's, and Follow Film 0 Off, 1 On, absent to keep the
+ * camera's. GR IV Monochrome has no color and no Follow Film. */
 export interface Glow {
   bloom: number;
   halation: number;
   halationColor: number | null;
+  halationFilm?: number | null;
 }
 
 /** The border: style 0 Off, 1 Thin, 2 Wide, 3 Instant, and the color 0 white, 1 black of a

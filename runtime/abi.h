@@ -97,24 +97,24 @@
 #define GRKIT_RECIPE_OFF 0x10000000U
 /* The settings of modules that a recipe holds (grkit_core::recipes::SETTINGS):
    GLOW.BLOOM, GLOW.HALATION, GLOW.HALATION_COLOR, CORE.BORDER,
-   CORE.BORDER_COLOR, GRAIN.STYLE. GRKIT_RECIPE_SETTING_IDS gives the handle of
-   a capability (bit i of GRKIT_RECIPE_SETTING_CORE), else the state file ID,
-   which finds the setting in the settings table. Its bits are at _SHIFTS in
-   word _WORDS: one bit holds it, then its value, at most _MASKS. Bit i of
-   _COLOR_ONLY: GR IV Monochrome does not hold it. Of _LOOK: it is part of the
-   whole look. Of _WITH_PREVIOUS: a save holds it only while setting i - 1 is
-   not 0. _MODULES gives the module of each, by its position in
-   GRKIT_RECIPE_MODULES: GLOW, BORDER, GRAIN. */
-#define GRKIT_RECIPE_SETTINGS 6U
-#define GRKIT_RECIPE_SETTING_IDS 73603892U, 979977653U, 208924775U, 265U, 266U, 252484306U
+   CORE.BORDER_COLOR, GRAIN.STYLE, GLOW.HALATION_FILM. GRKIT_RECIPE_SETTING_IDS
+   gives the handle of a capability (bit i of GRKIT_RECIPE_SETTING_CORE), else
+   the state file ID, which finds the setting in the settings table. Its bits
+   are at _SHIFTS in word _WORDS: one bit holds it, then its value, at most
+   _MASKS. Bit i of _COLOR_ONLY: GR IV Monochrome does not hold it. Of _LOOK:
+   it is part of the whole look. Of _WITH_PREVIOUS: a save holds it only while
+   setting i - 1 is not 0. _MODULES gives the module of each, by its position
+   in GRKIT_RECIPE_MODULES: GLOW, BORDER, GRAIN. */
+#define GRKIT_RECIPE_SETTINGS 7U
+#define GRKIT_RECIPE_SETTING_IDS 73603892U, 979977653U, 208924775U, 265U, 266U, 252484306U, 400343571U
 #define GRKIT_RECIPE_SETTING_CORE 24U
-#define GRKIT_RECIPE_SETTING_WORDS 4U, 4U, 4U, 5U, 5U, 5U
-#define GRKIT_RECIPE_SETTING_SHIFTS 0U, 3U, 6U, 0U, 4U, 6U
-#define GRKIT_RECIPE_SETTING_MASKS 3U, 3U, 3U, 7U, 1U, 1U
-#define GRKIT_RECIPE_SETTING_COLOR_ONLY 4U
-#define GRKIT_RECIPE_SETTING_LOOK 39U
+#define GRKIT_RECIPE_SETTING_WORDS 4U, 4U, 4U, 5U, 5U, 5U, 5U
+#define GRKIT_RECIPE_SETTING_SHIFTS 0U, 3U, 6U, 0U, 4U, 6U, 8U
+#define GRKIT_RECIPE_SETTING_MASKS 3U, 3U, 3U, 7U, 1U, 1U, 1U
+#define GRKIT_RECIPE_SETTING_COLOR_ONLY 68U
+#define GRKIT_RECIPE_SETTING_LOOK 103U
 #define GRKIT_RECIPE_SETTING_WITH_PREVIOUS 16U
-#define GRKIT_RECIPE_SETTING_MODULES 0U, 0U, 0U, 1U, 1U, 2U
+#define GRKIT_RECIPE_SETTING_MODULES 0U, 0U, 0U, 1U, 1U, 2U, 0U
 #define GRKIT_RECIPE_MODULES 3U
 #define GRKIT_RECIPE_KEY_BASE 991000000U
 #define GRKIT_RECIPE_KEY_STRIDE 100U
@@ -870,7 +870,7 @@
    namespace, and each setting that changes the picture: its state file ID, its
    core handle or 0, and its property. */
 #define GRKIT_PHOTO_XMP_NAMESPACE "https://grkit.app/ns/1.0/"
-#define GRKIT_PHOTO_XMP_SETTINGS {790270076U,0x102U,"Grain"},{977751003U,0x103U,"GrainSize"},{73603892U,0x0U,"Bloom"},{979977653U,0x0U,"Halation"},{208924775U,0x0U,"HalationColor"},{862826181U,0x109U,"Border"},{360900158U,0x10aU,"BorderColor"},{484706023U,0x101U,"Framing"},{660632122U,0x107U,"Crop"},{157666443U,0x0U,"DateImprint"},{247126882U,0x0U,"DateLook"},{330071171U,0x0U,"DatePosition"}
+#define GRKIT_PHOTO_XMP_SETTINGS {790270076U,0x102U,"Grain"},{977751003U,0x103U,"GrainSize"},{73603892U,0x0U,"Bloom"},{979977653U,0x0U,"Halation"},{208924775U,0x0U,"HalationColor"},{400343571U,0x0U,"HalationFilm"},{862826181U,0x109U,"Border"},{360900158U,0x10aU,"BorderColor"},{484706023U,0x101U,"Framing"},{660632122U,0x107U,"Crop"},{157666443U,0x0U,"DateImprint"},{247126882U,0x0U,"DateLook"},{330071171U,0x0U,"DatePosition"}
 
 /* An Image Control record. The records follow the header. */
 #define GRKIT_RECORD_SIZE 0x1100

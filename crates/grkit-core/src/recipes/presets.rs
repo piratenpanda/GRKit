@@ -37,6 +37,7 @@ const GLOW_OFF: Glow = Glow {
     bloom: 0,
     halation: 0,
     halation_color: Some(0),
+    halation_film: None,
 };
 
 /// The camera lines of the color recipes: each but GR IV Monochrome.
@@ -172,6 +173,7 @@ pub fn presets() -> Vec<Preset> {
             bloom: 0,
             halation: 2,
             halation_color: Some(0),
+            halation_film: None,
         }),
         // A preset keeps the border of the camera.
         grain_style: None,

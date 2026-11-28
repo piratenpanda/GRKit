@@ -33,7 +33,9 @@
 #define DETAIL_NAME_DATE 32U
 /* The Film-like style of Grain (GRAIN.STYLE), after the settings above. */
 #define DETAIL_NAME_GRAIN_STYLE 33U
-#define DETAIL_NAMES 34U
+/* Follow Film of Halation (GLOW.HALATION_FILM). */
+#define DETAIL_NAME_HALATION_FILM 34U
+#define DETAIL_NAMES 35U
 static const char *const detail_names[DETAIL_NAMES]={
     0,"Film Look","Image Control",
     "Saturation","Hue","High/Low Key","Contrast","Contrast (Highlight)","Contrast (Shadow)","Sharpness",
@@ -44,5 +46,5 @@ static const char *const detail_names[DETAIL_NAMES]={
     "Highlight Correction","Shadow Correction","Peripheral Illumination","High-ISO NR",
     "Exposure Compensation","Auto ISO Upper Limit","Metering","ND Filter",
     "Framing","Crop","Date Imprint",
-    "Grain Style"};
+    "Grain Style","Follow Film"};
 #endif

@@ -172,9 +172,9 @@ impl Setting {
 
 /// The settings of modules that a recipe holds, in the order of their bits
 /// (`layout::SETTING_PLACES`): Glow (`modules/glow`), Border
-/// (`modules/border`), and the style of Grain (`modules/grain`). A new
-/// setting comes last, so the bits of the others stay.
-pub const SETTINGS: [Setting; 6] = [
+/// (`modules/border`), the style of Grain (`modules/grain`), and Follow Film
+/// of Halation. A new setting comes last, so the bits of the others stay.
+pub const SETTINGS: [Setting; 7] = [
     Setting {
         module: "GLOW",
         key: "BLOOM",
@@ -232,6 +232,17 @@ pub const SETTINGS: [Setting; 6] = [
         look: true,
         with_previous: false,
     },
+    // 0 Off, the Halation Color; 1 On, the film of the effect. A recipe
+    // without it keeps the setting of the camera.
+    Setting {
+        module: "GLOW",
+        key: "HALATION_FILM",
+        values: 2,
+        bits: 1,
+        color_only: true,
+        look: true,
+        with_previous: false,
+    },
 ];
 
 /// The modules of `SETTINGS`, in the order of their first setting. A recipe
@@ -247,9 +258,10 @@ pub fn setting_modules() -> Vec<&'static str> {
     modules
 }
 
-/// The Glow of a recipe: Bloom and Halation, each 0 Off to 3 Strong, and the
-/// color of Halation, 0 Red, 1 Orange, 2 Gold, 3 White. A recipe without a
-/// color keeps the color of the camera. GR IV Monochrome has no color.
+/// The Glow of a recipe: Bloom and Halation, each 0 Off to 3 Strong, the
+/// color of Halation, 0 Red, 1 Orange, 2 Gold, 3 White, and Follow Film of
+/// Halation, 0 Off, 1 On. A recipe without a color or Follow Film keeps that
+/// of the camera. GR IV Monochrome has neither.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Glow {
@@ -257,6 +269,8 @@ pub struct Glow {
     pub halation: u8,
     #[serde(default)]
     pub halation_color: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub halation_film: Option<u8>,
 }
 
 /// The border of a recipe (`CORE.BORDER`, `CORE.BORDER_COLOR`): the style,
@@ -274,8 +288,13 @@ pub struct Border {
 impl Recipe {
     /// The value of each of `SETTINGS`, `None` for each that is not held.
     pub(super) fn setting_values(&self) -> [Option<u8>; SETTINGS.len()] {
-        let glow = self.glow.map_or([None; 3], |glow| {
-            [Some(glow.bloom), Some(glow.halation), glow.halation_color]
+        let glow = self.glow.map_or([None; 4], |glow| {
+            [
+                Some(glow.bloom),
+                Some(glow.halation),
+                glow.halation_color,
+                glow.halation_film,
+            ]
         });
         let border = self
             .border
@@ -287,22 +306,24 @@ impl Recipe {
             border[0],
             border[1],
             self.grain_style,
+            glow[3],
         ]
     }
 
     /// Set Glow, Border, and the Grain style from the value of each of
     /// `SETTINGS`. Bloom and Halation are held together, and the Halation
-    /// color only with them; a border color only with a style.
+    /// color and Follow Film only with them; a border color only with a style.
     pub(super) fn set_setting_values(
         &mut self,
         values: [Option<u8>; SETTINGS.len()],
     ) -> Result<()> {
-        self.glow = match [values[0], values[1], values[2]] {
-            [None, None, None] => None,
-            [Some(bloom), Some(halation), halation_color] => Some(Glow {
+        self.glow = match [values[0], values[1], values[2], values[6]] {
+            [None, None, None, None] => None,
+            [Some(bloom), Some(halation), halation_color, halation_film] => Some(Glow {
                 bloom,
                 halation,
                 halation_color,
+                halation_film,
             }),
             _ => bail!("A recipe holds Bloom and Halation together"),
         };

@@ -64,7 +64,7 @@ static const u32 detail_iso_values[]={NATIVE_ISO_VALUES};
 _Static_assert(sizeof(detail_iso_values)/sizeof(detail_iso_values[0])>=NATIVE_GR3_ISO_STEPS &&
                sizeof(detail_iso_values)/sizeof(detail_iso_values[0])>=NATIVE_GR4_ISO_STEPS,
                "an ISO for each third stop of the Auto ISO limit");
-_Static_assert(GRKIT_RECIPE_SETTINGS==6U,"the details name each module setting of a recipe");
+_Static_assert(GRKIT_RECIPE_SETTINGS==7U,"the details name each module setting of a recipe");
 _Static_assert(DETAIL_SHORT_UNITS<=DETAIL_VALUE_UNITS,"a short value fits the value");
 
 /* An item while it is written. */
@@ -239,7 +239,8 @@ static void detail_module(DetailList *list,u32 name,u32 setting,u32 value,const 
     detail_put(list,&item);
 }
 /* Grain with its size and its Film-like style (module setting 5), Bloom,
-   Halation, and Border, as the recipe holds them. */
+   Halation with Follow Film On (module setting 6), and Border, as the recipe
+   holds them. */
 static void detail_modules(DetailList *list,const u32 *w) {
     u32 level, v;
     char size[16];
@@ -258,9 +259,12 @@ static void detail_modules(DetailList *list,const u32 *w) {
     }
     if(recipe_setting_held(w,0) && (v=recipe_setting_value(w,0)) && v<4U)
         detail_module(list,DETAIL_NAME_BLOOM,1U,v,detail_strengths[v],0);
-    if(recipe_setting_held(w,1) && (v=recipe_setting_value(w,1)) && v<4U)
+    if(recipe_setting_held(w,1) && (v=recipe_setting_value(w,1)) && v<4U) {
         detail_module(list,DETAIL_NAME_HALATION,2U,v,detail_strengths[v],
                       recipe_setting_held(w,2) && recipe_setting_value(w,2)<4U ? detail_halation_colors[recipe_setting_value(w,2)] : 0);
+        if(recipe_setting_held(w,6) && recipe_setting_value(w,6)==1U)
+            detail_module(list,DETAIL_NAME_HALATION_FILM,7U,1U,"On",0);
+    }
     if(recipe_setting_held(w,3) && (v=recipe_setting_value(w,3)) && v<4U)
         detail_module(list,DETAIL_NAME_BORDER,4U,v,detail_borders[v],
                       recipe_setting_held(w,4) && recipe_setting_value(w,4)<2U ? detail_border_colors[recipe_setting_value(w,4)] : 0);

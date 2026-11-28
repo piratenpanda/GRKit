@@ -23,6 +23,7 @@ pub(crate) fn sample() -> Vec<Recipe> {
                 bloom: 1,
                 halation: 3,
                 halation_color: Some(2),
+                halation_film: Some(1),
             }),
             grain_style: Some(1),
             border: Some(Border {
@@ -98,6 +99,7 @@ pub(crate) fn sample() -> Vec<Recipe> {
                 bloom: 0,
                 halation: 2,
                 halation_color: None,
+                halation_film: None,
             }),
             grain_style: None,
             border: None,
@@ -153,10 +155,11 @@ fn the_words_follow_the_camera_layout() {
     // Without a color, the camera keeps its own.
     assert_eq!(sample()[2].words().unwrap()[MODULE_WORD], 0b101_001);
     // The border follows in the next word: Wide, then black, then the Grain
-    // style Film-like.
+    // style Film-like, then Follow Film On.
     assert_eq!(SETTING_PLACES[3], (SETTINGS_WORD, 0));
     assert_eq!(SETTING_PLACES[5], (SETTINGS_WORD, 6));
-    assert_eq!(effect[SETTINGS_WORD], 0b1111_0101);
+    assert_eq!(SETTING_PLACES[6], (SETTINGS_WORD, 8));
+    assert_eq!(effect[SETTINGS_WORD], 0b11_1111_0101);
     // Border Off holds no color.
     assert_eq!(words[SETTINGS_WORD], 0b0001);
     assert_eq!(sample()[2].words().unwrap()[SETTINGS_WORD], 0);
@@ -289,15 +292,24 @@ fn glow_holds_bloom_and_halation_together() {
         bloom: 0,
         halation: 2,
         halation_color: Some(1),
+        halation_film: None,
     });
     assert!(
         recipes[2].check().is_err(),
         "Monochrome has no Halation color"
     );
+    recipes[2].glow = Some(Glow {
+        bloom: 0,
+        halation: 2,
+        halation_color: None,
+        halation_film: Some(1),
+    });
+    assert!(recipes[2].check().is_err(), "Monochrome has no Follow Film");
     recipes[0].glow = Some(Glow {
         bloom: 4,
         halation: 0,
         halation_color: None,
+        halation_film: None,
     });
     assert!(recipes[0].check().is_err());
 }

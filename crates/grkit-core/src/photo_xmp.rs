@@ -25,6 +25,7 @@ pub const SETTINGS: &[(&str, &str)] = &[
     ("GLOW.BLOOM", "Bloom"),
     ("GLOW.HALATION", "Halation"),
     ("GLOW.HALATION_COLOR", "HalationColor"),
+    ("GLOW.HALATION_FILM", "HalationFilm"),
     ("CORE.BORDER", "Border"),
     ("CORE.BORDER_COLOR", "BorderColor"),
     ("CORE.ASPECT", "Framing"),

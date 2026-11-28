@@ -1200,6 +1200,7 @@ fn library_recipes() -> Vec<grkit_core::recipes::Recipe> {
                 bloom: 1,
                 halation: 3,
                 halation_color: Some(2),
+                halation_film: None,
             }),
             grain_style: None,
             border: Some(Border {
@@ -1258,6 +1259,7 @@ fn library_recipes() -> Vec<grkit_core::recipes::Recipe> {
                 bloom: 2,
                 halation: 1,
                 halation_color: None,
+                halation_film: None,
             }),
             grain_style: None,
             border: None,
